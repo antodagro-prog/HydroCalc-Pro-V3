@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HydroCalc Pro V3 - Calcolatore Idroponica & Microgreens</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#10b981">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="HydroCalc">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{--bg:#0f172a;--card:#1e293b;--accent:#10b981;--text:#f8fafc;--text-muted:#94a3b8;--border:#334155;--warn:#f59e0b;--danger:#ef4444;--tag-target:#c084fc;--tag-real:#34d399;--tag-est:#fbbf24}
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,-apple-system,sans-serif}
+body{background:var(--bg);color:var(--text);padding:16px;max-width:800px;margin:0 auto;line-height:1.5}
+h1{font-size:1.5rem;color:var(--accent);margin-bottom:4px;text-align:center}
+p.subtitle{text-align:center;color:var(--text-muted);font-size:.85rem;margin-bottom:20px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px}
+.card-title{font-size:1.05rem;color:var(--accent);margin-bottom:12px;font-weight:600;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.form-group{margin-bottom:14px}
+label{display:block;font-size:.85rem;color:var(--text-muted);margin-bottom:6px}
+select,input[type=number],input[type=text]{width:100%;padding:10px;background:#0f172a;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.95rem}
+.slider-container{display:flex;align-items:center;gap:12px}
+input[type=range]{flex:1;accent-color:var(--accent)}
+.val-badge{background:#0f172a;border:1px solid var(--border);padding:4px 8px;border-radius:6px;font-size:.85rem;min-width:75px;text-align:center}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.res-box{background:#0f172a;border:1px solid var(--border);padding:12px;border-radius:8px;text-align:center}
+.res-val{font-size:1.2rem;font-weight:700;color:var(--accent)}
+.res-lbl{font-size:.75rem;color:var(--text-muted);margin-top:2px}
+.tag{font-size:.65rem;font-weight:700;padding:2px 6px;border-radius:4px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+.tag-target{background:rgba(192,132,252,.15);color:var(--tag-target);border:1px solid var(--tag-target)}
+.tag-real{background:rgba(52,211,153,.15);color:var(--tag-real);border:1px solid var(--tag-real)}
+.tag-est{background:rgba(251,191,36,.15);color:var(--tag-est);border:1px solid var(--tag-est)}
+.badge-alert{font-size:.8rem;padding:10px;border-radius:6px;margin-top:12px;display:none;line-height:1.4}
+.badge-warn{background:rgba(245,158,11,.15);border:1px solid var(--warn);color:var(--warn)}
+.badge-danger{background:rgba(239,68,68,.15);border:1px solid var(--danger);color:var(--danger)}
+.step-list{font-size:.85rem;color:var(--text-muted);padding-left:18px;margin-top:8px}
+.step-list li{margin-bottom:6px}
+.info-note{font-size:.75rem;color:var(--text-muted);font-style:italic;margin-top:8px;line-height:1.3}
+#srcNote{font-size:.8rem;color:var(--text-muted);margin-bottom:10px;line-height:1.35}
+.table-responsive{overflow-x:auto;margin-top:12px}
+.history-table{width:100%;border-collapse:collapse;font-size:.8rem;text-align:left}
+.history-table th,.history-table td{padding:8px 6px;border-bottom:1px solid var(--border)}
+.history-table th{color:var(--text-muted);font-weight:600;background:#0f172a}
+.btn-action{padding:6px 12px;border-radius:6px;border:none;font-size:.8rem;font-weight:600;cursor:pointer}
+.btn-primary{background:var(--accent);color:#000}
+.btn-danger{background:rgba(239,68,68,.2);color:var(--danger);border:1px solid var(--danger)}
+.btn-secondary{background:#334155;color:var(--text)}
+.flex-gap{display:flex;gap:8px;margin-top:10px}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--accent);color:#000;padding:10px 18px;border-radius:8px;font-weight:600;font-size:.85rem;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.error{background:var(--danger);color:#fff}
+</style>
+</head>
+<body>
+<h1>HydroCalc Pro V3</h1>
+<p class="subtitle">Calcolatore Idroponica, EC, PPM, A+B, pH, Storico & Rabbocco</p>
+
+<div class="card">
+<div class="card-title"><span>1. Selezione Coltura</span><span class="tag tag-target">Target Ideale</span></div>
+<div class="form-group"><label for="catSelect">Categoria Pianta</label>
+<select id="catSelect" onchange="updatePlantList()">
+<option value="micro">Microgreens (34 specie)</option>
+<option value="leafy">Insalate & Foglia (21 specie)</option>
+<option value="herbs">Erbe Aromatiche (20 specie)</option>
+<option value="fruit">Ortaggi da Frutto & Altri (20 specie)</option>
+</select></div>
+<div class="form-group"><label for="plantSelect">Varietà Specifica (● verificato · ◐ fonti secondarie · ○ non verificato)</label>
+<select id="plantSelect" onchange="calculate()"></select></div>
+<div id="srcNote"></div>
+<div class="grid-3">
+<div class="res-box" aria-live="polite"><div class="res-val" id="targetEcDisplay">0.0</div><div class="res-lbl">EC Target (mS/cm)</div></div>
+<div class="res-box" aria-live="polite"><div class="res-val" id="targetPhDisplay">0.0</div><div class="res-lbl">pH Ottimale</div></div>
+<div class="res-box" aria-live="polite"><div class="res-val" id="targetPpm500">0</div><div class="res-lbl">TDS (PPM 500)</div></div>
+</div></div>
+
+<div class="card">
+<div class="card-title"><span>2. Parametri Acqua Base & Concime</span><span class="tag tag-real">Misure + Resa</span></div>
+<div class="form-group"><label for="volInput">Capienza Serbatoio (Litri)</label>
+<div class="slider-container"><input type="range" id="volInput" min="1" max="500" value="20" oninput="calculate()" aria-label="Capienza serbatoio in litri"><span class="val-badge" id="volVal">20 L</span></div></div>
+<div class="form-group"><label for="ecBaseInput">EC Acqua di Partenza (Misurata in mS/cm)</label>
+<div class="slider-container"><input type="range" id="ecBaseInput" min="0" max="1.5" step="0.05" value="0.4" oninput="calculate()" aria-label="EC acqua di partenza"><span class="val-badge" id="ecBaseVal">0.40</span></div></div>
+<div class="form-group"><label for="hco3Input">Alcalinità Bicarbonati (Misurata HCO₃⁻ mg/L)</label>
+<div class="slider-container"><input type="range" id="hco3Input" min="10" max="350" step="5" value="180" oninput="calculate()" aria-label="Alcalinità bicarbonati"><span class="val-badge" id="hco3Val">180 mg/L</span></div></div>
+<div class="form-group"><label for="yieldInput">Resa Concime (ΔEC per 1 mL/L di A + 1 mL/L di B) - dipende dal TUO prodotto</label>
+<div class="slider-container"><input type="range" id="yieldInput" min="0.10" max="1.20" step="0.05" value="0.40" oninput="calculate()" aria-label="Resa concime"><span class="val-badge" id="yieldVal">0.40</span></div></div>
+</div>
+
+<div class="card">
+<div class="card-title"><span>3. Correttore pH Down</span><span class="tag tag-est">Stima Alcalinità</span></div>
+<div class="form-group"><label for="acidSelect">Tipo di Acido Utilizzato</label>
+<select id="acidSelect" onchange="calculate()">
+<option value="hno3">Acido Nitrico 38% (7.4 M - Consigliato vegetativa/microgreens)</option>
+<option value="h3po4">Acido Fosforico 59% (8.5 M - Consigliato fioritura/acqua dolce)</option>
+<option value="mix">Miscela Nitrico/Fosforico 3:1 v/v (7.68 M)</option>
+</select></div>
+<div class="grid-2">
+<div class="res-box" aria-live="polite"><div class="res-val" id="acidDoseDisplay">0.0 mL</div><div class="res-lbl">Stima Acido Correttore</div></div>
+<div class="res-box" aria-live="polite"><div class="res-val" id="acidNutrientDisplay">+0 mg/L</div><div class="res-lbl" id="acidNutrientLabel">Apporto Nutritivo</div></div>
+</div>
+<p class="info-note">* La dose d'acido neutralizza i bicarbonati a ~35 mg/L. Il pH finale effettivo va verificato con pH-metro.</p>
+</div>
+
+<div class="card">
+<div class="card-title"><span>4. Dosaggio Fertilizzanti (A + B)</span><span class="tag tag-est">Stima Dosaggio</span></div>
+<div class="grid-2" style="margin-bottom:12px">
+<div class="res-box" aria-live="polite"><div class="res-val" id="doseADisplay" style="color:#38bdf8">0.0 mL</div><div class="res-lbl">Prelevare di Componente A</div></div>
+<div class="res-box" aria-live="polite"><div class="res-val" id="doseBDisplay" style="color:#f43f5e">0.0 mL</div><div class="res-lbl">Prelevare di Componente B</div></div>
+</div>
+<div class="grid-2">
+<div class="res-box" aria-live="polite"><div class="res-val" id="ppm700Display">0</div><div class="res-lbl">PPM 700 (Truncheon)</div></div>
+<div class="res-box" aria-live="polite"><div class="res-val" id="deltaEcDisplay">0.0</div><div class="res-lbl">ΔEC Requisito Concime</div></div>
+</div>
+<div id="alertBox" class="badge-alert" role="alert"></div>
+<div style="margin-top:14px"><label style="font-weight:600;color:var(--text)">Sequenza Operativa di Miscelazione:</label>
+<ol class="step-list">
+<li>Versare <b><span id="stepAcid">0</span> mL</b> di acido nel serbatoio e miscelare per abbattere l'alcalinità.</li>
+<li>Aggiungere <b><span id="stepA">0</span> mL</b> di <b>Componente A</b> e agitare accuratamente.</li>
+<li>Aggiungere <b><span id="stepB">0</span> mL</b> di <b>Componente B</b> (stessa dose di A) e omogeneizzare.</li>
+<li><b>Misurare con pH-metro</b> e verificare che rientri tra <b><span id="stepPh">5.5 - 6.0</span></b>.</li>
+</ol></div></div>
+
+<div class="card">
+<div class="card-title"><span>5. Registro & Storico Misurazioni</span><span class="tag tag-real">LocalStorage Offline</span></div>
+<div class="grid-2">
+<div class="form-group"><label for="logEc">EC Misurata (mS/cm)</label><input type="number" id="logEc" step="0.01" min="0" max="5" placeholder="es. 1.25"></div>
+<div class="form-group"><label for="logPh">pH Misurato</label><input type="number" id="logPh" step="0.1" min="0" max="14" placeholder="es. 5.8"></div>
+</div>
+<div class="form-group"><label for="logNotes">Note / Azioni applicate</label><input type="text" id="logNotes" maxlength="200" placeholder="es. Aggiunti 10mL acido, soluzione limpida"></div>
+<div class="flex-gap"><button type="button" class="btn-action btn-primary" onclick="saveMeasurement()">Salva Misurazione</button><button type="button" class="btn-action btn-secondary" onclick="exportCSV()">Esporta CSV</button></div>
+<div class="table-responsive"><table class="history-table"><thead><tr><th>Data/Ora</th><th>Coltura</th><th>EC (Tgt/Reale)</th><th>pH</th><th>Note</th><th>Az.</th></tr></thead><tbody id="historyTableBody"></tbody></table></div>
+<div style="margin-top:10px;text-align:right"><button type="button" class="btn-action btn-danger" onclick="clearAllHistory()">Svuota Storico</button></div>
+</div>
+
+<div class="card">
+<div class="card-title"><span>6. Reintegro & Rabbocco per Evaporazione</span><span class="tag tag-est">Gestione Acqua Persa</span></div>
+<div class="grid-2">
+<div class="form-group"><label for="topoffEvapL">Acqua Evaporata / Mancante (Litri)</label><input type="number" id="topoffEvapL" step="0.5" min="0" max="500" value="5" oninput="calculateTopoff()"></div>
+<div class="form-group"><label for="topoffEcCurrent">EC Attuale in Vasca (Misurata, prima del rabbocco)</label><input type="number" id="topoffEcCurrent" step="0.05" min="0" max="5" value="1.20" oninput="calculateTopoff()"></div>
+</div>
+<div class="grid-2">
+<div class="res-box" aria-live="polite"><div class="res-val" id="topoffWaterAdd" style="color:var(--accent)">0.0 L</div><div class="res-lbl">Acqua Osmotica/Base da Reintegrare</div></div>
+<div class="res-box" aria-live="polite"><div class="res-val" id="topoffNutrientAdd">0.0 mL</div><div class="res-lbl">Integrazione A + B (se EC dopo rabbocco &lt; Target)</div></div>
+</div>
+<div id="topoffMsg" class="info-note" aria-live="polite"></div>
+<p class="info-note">* La dose tiene conto della diluizione: dopo l'acqua l'EC scende. Il pH va ricontrollato dopo ogni aggiunta.</p>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+const N={
+NM:"Nessuna raccomandazione per specie in letteratura; gli studi sui microgreens usano EC ~0.4-1.2. Valore indicativo.",
+NF:"Nessuna fonte trovata: valore stimato.",
+RUm:"Studi su rucola microgreen: EC 0.6-1.2 dS/m (EC piu alti = piu minerali).",
+GM:"I germogli si coltivano di norma solo con acqua risciacquata, senza soluzione nutritiva: EC non applicabile. Valore stimato.",
+LT:"Purdue: 1.3 dS/m ottimale su 24 varieta di lattuga; OSU 1.2-1.8. pH: le fonti vanno da 5.5 a 7.0 (qui l'intervallo comune).",
+SP:"OSU Extension: EC 1.8-2.3, pH 6.0-7.0.",
+PK:"OSU: EC 1.5-2.0; Iowa State: 0.5-2.0 (oltre cala la resa). pH da fonti generiche.",
+KL:"Iowa State: crescita invariata sopra 1.0; EC basso causa carenza di zolfo.",
+CH:"Iowa State: ottimo a 2.0-2.5 dS/m, rese minori sotto o sopra. pH non verificato.",
+RU:"Yang 2021: ottimo 1.5-1.8 dS/m; Iowa State: 1.0-2.0.",
+BR:"Nessun dato diretto; specie affine al pak choi (OSU 1.5-2.0). Stima.",
+RS:"Dati solo per Eruca sativa (1.5-1.8); Diplotaxis non verificata.",
+BA:"OSU: EC 1.0-1.6. Iowa State 2025: pH ottimo 5.5 (range 4.5-6.5).",
+BX:"Stessa specie del basilico (OSU 1.0-1.6; Iowa State pH ottimo 5.5), non testata a parte.",
+BL:"Ibrido affine al basilico (OSU 1.0-1.6); non testato a parte. Stima.",
+PR:"Iowa State: EC 0.5-4.0 senza effetto sulla resa; pH ottimo 5.5 (range 5.0-6.0).",
+CO:"Iowa State: EC 0.5-4.0 senza effetto sulla resa; pH 6.0-6.7 da fonte secondaria.",
+SG:"Iowa State 2025: pH ottimo 6.0 (range 5.5-6.5). EC non verificato.",
+MN:"Fonti commerciali: EC 1.0-1.6; tollera pH fino a 6.5.",
+CV:"Fonti in conflitto: 1.0-1.2 (giovane) vs 1.4-2.0.",
+OR:"Fonti secondarie: EC 1.2-1.6; pH poco affidabile.",
+TM:"Fonti secondarie: EC 1.2-1.5, tollera fino a ~2.0.",
+RM:"Fonti secondarie: EC 1.2-2.0.",
+ML:"Fonte commerciale: EC 1.4-2.0 (consumatore forte).",
+TO:"OSU: EC 2.0-4.0, pH 6.0-6.5; Iowa State/UMKC: 1.5-3.5.",
+PE:"Ricetta commerciale da serra: EC di riferimento 2.2-2.5.",
+PC:"Nessuna fonte specifica; derivato dal peperone.",
+CE:"OSU: EC 1.7-2.0; Iowa State: 1.5-3.0. pH: OSU 5.0-5.5, altre fonti 5.5-6.5.",
+SB:"Fonti in conflitto: 1.2-2.4 (secondarie), ~2.5 (commerciali), <=1.0 (UArizona). pH 5.5-6.0 (UArizona).",
+BE:"OSU Extension: EC 2.0-4.0, pH 6.0.",
+CL:"OSU Extension: EC 1.8-2.4, pH 6.5. Sedano rapa non coperto.",
+LG:"Nessun valore trovato; il fagiolo (OSU 2.0-4.0) non e trasferibile a questa specie."
+};
+const P=(n,e,p,t='E',k='NF')=>({name:n,ec:e,ph:p,t,note:N[k]});
+const M=(n,e,p)=>P(n,e,p,'E','NM');
+const plants={
+micro:[M("Broccolo",.7,"5.5 - 6.0"),M("Cavolo Rosso",.7,"5.5 - 6.0"),M("Cavolo Nero",.7,"5.5 - 6.0"),M("Cavolo Bianco",.7,"5.5 - 6.0"),M("Cavolfiore",.7,"5.5 - 6.0"),M("Cavoletto di Bruxelles",.7,"5.5 - 6.0"),M("Ravanello Sangue di Bue",1.0,"5.5 - 6.5"),M("Ravanello Daikon",1.0,"5.5 - 6.5"),P("Rucola Coltivata",.9,"6.0 - 6.5",'R','RUm'),M("Pisello Affila / Tendril",1.2,"5.5 - 6.2"),M("Girasole",1.0,"5.5 - 6.2"),M("Basilico Verde",1.0,"5.5 - 6.5"),M("Basilico Viola",1.0,"5.5 - 6.5"),M("Senape Bianca / Gialla",.8,"5.5 - 6.0"),M("Senape Rossa / Oriental",.8,"5.5 - 6.0"),M("Crescione d'Acqua",.8,"5.8 - 6.5"),M("Grano Saraceno",.8,"5.5 - 6.2"),M("Erba Medica (Alfa-Alfa)",.5,"5.8 - 6.2"),M("Porro",1.0,"5.8 - 6.5"),M("Coriandolo",1.0,"5.8 - 6.5"),M("Amaranto Rosso",.9,"6.0 - 6.5"),M("Bietola Rossa (Bull's Blood)",1.1,"6.0 - 6.5"),M("Anice",.8,"5.8 - 6.5"),M("Finocchio",.9,"5.8 - 6.5"),M("Erba del Grano (Wheatgrass)",.8,"6.0 - 6.5"),M("Trifoglio Rosso",.6,"5.8 - 6.2"),M("Chia",.6,"6.0 - 6.5"),M("Lino",.6,"6.0 - 6.5"),M("Carota",.8,"5.8 - 6.5"),M("Kohlrabi (Cavolo Rapa)",.8,"5.5 - 6.0"),M("Mizuna",.8,"5.8 - 6.2"),M("Tatsoi",.8,"5.8 - 6.2"),M("Cipolla",1.0,"5.8 - 6.5"),P("Germogli Mung (Soia Verde)",.5,"5.8 - 6.5",'E','GM')],
+leafy:[P("Lattuga Cappuccina",1.3,"5.5 - 6.5",'V','LT'),P("Lattuga Romana",1.3,"5.5 - 6.5",'V','LT'),P("Lattuga Iceberg",1.3,"5.5 - 6.5",'V','LT'),P("Lattuga Gentilina / Lollo",1.3,"5.5 - 6.5",'V','LT'),P("Lattuga Canasta",1.3,"5.5 - 6.5",'V','LT'),P("Spinacio",1.8,"6.0 - 6.5",'V','SP'),P("Pak Choi / Bok Choy",1.5,"5.8 - 6.2",'V','PK'),P("Kale (Cavolo Riccio)",1.6,"5.5 - 6.5",'V','KL'),P("Songino / Valerianella",1.1,"5.5 - 6.2"),P("Cicoria / Radicchio Rosso",1.4,"5.8 - 6.2"),P("Endivia Escarola / Riccia",1.3,"5.5 - 6.2"),P("Bietola da Costa",2.0,"6.0 - 6.5",'V','CH'),P("Rucola Selvatica",1.2,"6.0 - 6.5",'E','RS'),P("Mizuna Verde / Rossa",1.4,"5.8 - 6.2",'E','BR'),P("Tatsoi da Foglia",1.4,"5.8 - 6.2",'E','BR'),P("Komatsuna",1.5,"5.8 - 6.2",'E','BR'),P("Cavolo Cinese (Napa Cabbage)",1.5,"5.8 - 6.2",'E','BR'),P("Lattughino da Taglio",1.3,"5.5 - 6.5",'V','LT'),P("Barbabietola da Foglia (Mangold)",2.0,"6.0 - 6.5",'V','CH'),P("Screpigna / Radicchio Taglio",1.3,"5.8 - 6.2"),P("Rucola (Eruca sativa)",1.6,"6.0 - 6.5",'V','RU')],
+herbs:[P("Basilico Genovese",1.2,"5.5 - 6.0",'V','BA'),P("Basilico Thai",1.2,"5.5 - 6.0",'V','BX'),P("Basilico Limone",1.2,"5.5 - 6.0",'R','BL'),P("Menta Piperita",1.4,"5.5 - 6.0",'R','MN'),P("Menta Romana (Spearmint)",1.4,"5.5 - 6.0",'R','MN'),P("Prezzemolo Liscio / Riccio",1.3,"5.5 - 6.0",'V','PR'),P("Erba Cipollina",1.4,"6.0 - 6.5",'R','CV'),P("Aneto",1.2,"5.5 - 6.0",'V','PR'),P("Origano",1.5,"6.0 - 6.8",'R','OR'),P("Timo Comune / Limonato",1.4,"5.5 - 6.0",'R','TM'),P("Rosmarino",1.2,"5.5 - 6.0",'R','RM'),P("Salvia",1.2,"5.5 - 6.5",'E','SG'),P("Coriandolo Aromatico",1.3,"5.8 - 6.5",'V','CO'),P("Maggiorana",1.4,"6.0 - 6.5"),P("Santoreggia",1.3,"6.0 - 6.5"),P("Estragone (Dragoncello)",1.2,"5.5 - 6.0"),P("Melissa",1.6,"5.5 - 6.5",'R','ML'),P("Erba Luigia (Cedrina)",1.2,"5.5 - 6.5"),P("Camomilla",1.0,"5.5 - 6.5"),P("Anice Verde",1.2,"5.8 - 6.5")],
+fruit:[P("Pomodoro (Fase Vegetativa)",2.0,"5.8 - 6.5",'V','TO'),P("Pomodoro (Fioritura/Frutto)",3.0,"5.8 - 6.5",'V','TO'),P("Pomodoro Ciliegino",2.5,"5.8 - 6.5",'V','TO'),P("Peperone Dolce",2.2,"5.8 - 6.2",'R','PE'),P("Peperoncino Piccante",2.0,"5.8 - 6.2",'E','PC'),P("Cetriolo",2.0,"5.5 - 6.0",'V','CE'),P("Melanzana",2.2,"5.5 - 6.0"),P("Zucchina",2.0,"5.8 - 6.2"),P("Fragola (Fase Vegetativa)",1.0,"5.5 - 6.2",'R','SB'),P("Fragola (Fioritura/Frutto)",1.5,"5.5 - 6.2",'R','SB'),P("Melone",2.2,"5.8 - 6.2"),P("Anguria",2.0,"5.8 - 6.2"),P("Okra",2.0,"6.0 - 6.5"),P("Zucca",2.2,"5.8 - 6.5"),P("Fagiolino / Fagiolo Nano",2.0,"5.8 - 6.2",'V','BE'),P("Pisello da Baccello",1.4,"5.8 - 6.5",'E','LG'),P("Fava",1.6,"6.0 - 6.5",'E','LG'),P("Physalis peruviana (Alchechengi)",2.0,"5.5 - 6.5"),P("Mais Dolce",1.8,"5.8 - 6.5"),P("Sedano / Sedano Rapa",1.8,"6.0 - 6.5",'V','CL')]
+};
+const TIER={V:"● Verificato (estensione/ricerca)",R:"◐ Fonti secondarie",E:"○ Non verificato"};
+const MARK={V:'●',R:'◐',E:'○'};
+const $=id=>document.getElementById(id);
+function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function showToast(msg,isError=false){const t=$('toast');t.textContent=msg;t.classList.toggle('error',isError);t.classList.add('show');clearTimeout(showToast._timer);showToast._timer=setTimeout(()=>t.classList.remove('show'),2200)}
+function updatePlantList(){
+const cat=$('catSelect').value,sel=$('plantSelect');sel.innerHTML='';
+plants[cat].forEach((p,i)=>{const o=document.createElement('option');o.value=i;o.textContent=`${MARK[p.t]} ${p.name} (EC ${p.ec})`;sel.appendChild(o)});
+calculate();
+}
+function getSelectedPlant(){const cat=$('catSelect').value;const i=parseInt($('plantSelect').value,10)||0;return plants[cat][i]}
+function calculate(){
+const sp=getSelectedPlant();if(!sp)return;
+const vol=parseFloat($('volInput').value)||0,ecBase=parseFloat($('ecBaseInput').value)||0,hco3=parseFloat($('hco3Input').value)||0,yieldPerMl=parseFloat($('yieldInput').value)||0.40,acidType=$('acidSelect').value;
+try{localStorage.setItem('hc_yield',yieldPerMl)}catch(e){}
+$('volVal').textContent=`${vol} L`;$('ecBaseVal').textContent=ecBase.toFixed(2);$('hco3Val').textContent=`${hco3} mg/L`;$('yieldVal').textContent=yieldPerMl.toFixed(2);
+const targetEc=sp.ec;
+$('targetEcDisplay').textContent=targetEc.toFixed(1);$('targetPhDisplay').textContent=sp.ph;
+$('targetPpm500').textContent=Math.round(targetEc*500);$('ppm700Display').textContent=Math.round(targetEc*700);
+$('srcNote').innerHTML='<b>'+TIER[sp.t]+'</b> — '+escapeHtml(sp.note);
+const dMmol=Math.max(0,hco3-35)/61.02;
+let acidMlPerL=0,nutText="+0 mg/L",nutLabel="Apporto Nutritivo",dEcAcid=0;
+if(dMmol>0){
+if(acidType==='hno3'){const m=7.4;acidMlPerL=dMmol/m;nutText=`+${Math.round(acidMlPerL*m*14.01)} mg/L N`;nutLabel="Azoto Nitrico (N)";dEcAcid=dMmol*0.0269}
+else if(acidType==='h3po4'){const m=8.5;acidMlPerL=dMmol/m;nutText=`+${Math.round(acidMlPerL*m*30.97)} mg/L P`;nutLabel="Fosforo (P)";dEcAcid=dMmol*(-0.0115)}
+else{const m=7.675;acidMlPerL=dMmol/m;nutText=`+${Math.round(acidMlPerL*.75*7.4*14.01)} N / +${Math.round(acidMlPerL*.25*8.5*30.97)} P`;nutLabel="Azoto (N) + Fosforo (P)";dEcAcid=dMmol*(.75*0.0269-.25*0.0115)}
+}
+const totalAcidMl=acidMlPerL*vol;
+$('acidDoseDisplay').textContent=`${totalAcidMl.toFixed(1)} mL`;$('acidNutrientDisplay').textContent=nutText;$('acidNutrientLabel').textContent=nutLabel;
+const effEc=Math.max(0,ecBase+dEcAcid),dEc=Math.max(0,targetEc-effEc),dose=dEc/yieldPerMl*vol;
+$('doseADisplay').textContent=`${dose.toFixed(1)} mL`;$('doseBDisplay').textContent=`${dose.toFixed(1)} mL`;$('deltaEcDisplay').textContent=dEc.toFixed(2);
+$('stepAcid').textContent=totalAcidMl.toFixed(1);$('stepA').textContent=dose.toFixed(1);$('stepB').textContent=dose.toFixed(1);$('stepPh').textContent=sp.ph;
+const ab=$('alertBox');ab.style.display='none';ab.className='badge-alert';
+if(effEc>=targetEc){ab.textContent=`ATTENZIONE: L'EC effettiva dell'acqua base rettificata (${effEc.toFixed(2)} mS/cm) supera o eguaglia il target (${targetEc.toFixed(1)} mS/cm). Tagliare con acqua osmotizzata.`;ab.classList.add('badge-danger');ab.style.display='block'}
+else if(acidType==='h3po4'&&hco3>180){ab.textContent=`AVVISO: Alcalinità elevata (${hco3} mg/L). L'uso di Acido Fosforico apporta P in eccesso. Considerare Acido Nitrico o la Miscela 3:1 per evitare la precipitazione di Fosfato di Calcio.`;ab.classList.add('badge-warn');ab.style.display='block'}
+calculateTopoff();
+}
+const STORAGE_KEY='hydrocalc_history_logs';
+function getHistory(){try{const d=localStorage.getItem(STORAGE_KEY);return d?JSON.parse(d):[]}catch(e){console.error('Errore lettura storico:',e);return[]}}
+function setHistory(h){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(h));return true}catch(e){console.error('Errore scrittura storico:',e);showToast('Impossibile salvare: memoria piena o bloccata',true);return false}}
+function saveMeasurement(){
+const sp=getSelectedPlant(),ecI=$('logEc').value.trim(),phI=$('logPh').value.trim(),notes=$('logNotes').value.trim();
+if(!ecI||!phI){showToast('Inserire sia EC che pH',true);return}
+const ec=parseFloat(ecI),ph=parseFloat(phI);
+if(!Number.isFinite(ec)||ec<0||ec>5){showToast('EC fuori range (0-5 mS/cm)',true);return}
+if(!Number.isFinite(ph)||ph<0||ph>14){showToast('pH fuori range (0-14)',true);return}
+const e={id:(crypto.randomUUID&&crypto.randomUUID())||String(Date.now()+Math.random()),timestamp:new Date().toLocaleString('it-IT',{dateStyle:'short',timeStyle:'short'}),plant:sp.name,targetEc:sp.ec,measuredEc:ec.toFixed(2),measuredPh:ph.toFixed(1),notes:notes||'-'};
+const h=getHistory();h.unshift(e);
+if(setHistory(h)){$('logEc').value='';$('logPh').value='';$('logNotes').value='';renderHistoryTable();showToast('Misurazione salvata ✓')}
+}
+function renderHistoryTable(){
+const tb=$('historyTableBody'),h=getHistory();
+if(!h.length){tb.innerHTML=`<tr><td colspan="6" style="text-align:center;color:var(--text-muted)">Nessuna misurazione salvata.</td></tr>`;return}
+tb.innerHTML=h.map(i=>`<tr><td>${escapeHtml(i.timestamp)}</td><td><b>${escapeHtml(i.plant)}</b></td><td>${escapeHtml(i.targetEc)} / <span style="color:var(--accent)">${escapeHtml(i.measuredEc)}</span></td><td>${escapeHtml(i.measuredPh)}</td><td>${escapeHtml(i.notes)}</td><td><button class="btn-action btn-danger" style="padding:2px 6px;font-size:.7rem" onclick="deleteLog('${escapeHtml(i.id)}')">X</button></td></tr>`).join('');
+}
+function deleteLog(id){setHistory(getHistory().filter(i=>i.id!==id));renderHistoryTable()}
+function clearAllHistory(){if(confirm("Cancellare l'intero storico delle misurazioni?")){try{localStorage.removeItem(STORAGE_KEY)}catch(e){}renderHistoryTable();showToast('Storico svuotato')}}
+function exportCSV(){
+const h=getHistory();if(!h.length){showToast('Nessun dato da esportare',true);return}
+const q=v=>`"${String(v??'').replace(/"/g,'""')}"`;
+let csv='\uFEFF'+['Data','Coltura','EC Target','EC Misurata','pH Misurato','Note'].map(q).join(',')+'\n';
+h.forEach(r=>{csv+=[r.timestamp,r.plant,r.targetEc,r.measuredEc,r.measuredPh,r.notes].map(q).join(',')+'\n'});
+const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+const a=document.createElement('a');a.href=url;a.download=`HydroCalc_Storico_${new Date().toISOString().slice(0,10)}.csv`;document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);showToast('CSV esportato ✓');
+}
+// Rabbocco: l'acqua aggiunta DILUISCE la soluzione. EC dopo = (EC attuale x litri rimasti + EC acqua x litri aggiunti) / capienza
+function topoffCalc(vol,evap,ecCur,ecWater,target,yld){
+const added=Math.min(Math.max(0,evap),vol),left=vol-added;
+const ecAfter=vol>0?(ecCur*left+ecWater*added)/vol:0;
+const gap=target-ecAfter;
+return{added,ecAfter,mlEach:gap>0&&yld>0?gap/yld*vol:0,gap};
+}
+function calculateTopoff(){
+const sp=getSelectedPlant();if(!sp)return;
+const vol=parseFloat($('volInput').value)||0,evap=parseFloat($('topoffEvapL').value)||0,ecCur=Math.max(0,parseFloat($('topoffEcCurrent').value)||0),ecW=parseFloat($('ecBaseInput').value)||0,yld=parseFloat($('yieldInput').value)||0.40;
+const r=topoffCalc(vol,evap,ecCur,ecW,sp.ec,yld);
+$('topoffWaterAdd').textContent=`${r.added.toFixed(1)} L`;
+$('topoffNutrientAdd').textContent=`${r.mlEach.toFixed(1)} mL di A + ${r.mlEach.toFixed(1)} mL di B`;
+let msg=`EC stimata dopo il rabbocco: ${r.ecAfter.toFixed(2)} mS/cm (target ${sp.ec.toFixed(1)}).`;
+if(evap>vol)msg+=' L\'acqua evaporata supera la capienza: limitata a '+vol+' L.';
+if(r.gap<-0.05)msg+=' EC ancora sopra il target: scaricare parte della soluzione e rabboccare con acqua pulita.';
+$('topoffMsg').textContent=msg;
+}
+document.addEventListener('DOMContentLoaded',()=>{
+try{const y=localStorage.getItem('hc_yield');if(y)$('yieldInput').value=y}catch(e){}
+updatePlantList();renderHistoryTable();
+if('serviceWorker' in navigator&&location.protocol.startsWith('http')){navigator.serviceWorker.register('sw.js').catch(()=>{})}
+});
+</script>
+</body>
+</html>
